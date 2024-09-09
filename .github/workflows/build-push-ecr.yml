@@ -18,6 +18,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: arm64
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -29,12 +37,14 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build, tag, and push image to Amazon ECR
+    - name: Build and push ARM64 image to Amazon ECR
+      uses: docker/build-push-action@v6
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
-      run: |
-        cd app/monolith-service
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      with:
+        context: app/monolith-service
+        push: true
+        platforms: linux/arm64
+        tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
 
