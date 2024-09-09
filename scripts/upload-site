@@ -1,0 +1,33 @@
+#! /bin/bash
+
+set -eu
+
+if [[ -n "$1" ]]; then
+  BUCKET_NAME="$1"
+else
+  echo "Please define S3 bucket where to upload web frontend and API endpoint for the application: $0 <BUCKET_NAME> <API_ENDPOINT>"
+  exit 1
+fi
+
+if [[ -n "$2" ]]; then
+  API_ENDPOINT="$2"
+else
+  echo "Please define CloudFront API endpoint for the application: $0 <BUCKET_NAME> <API_ENDPOINT>"
+  exit 1
+fi
+
+# For auth, not used now
+REGION=$(aws configure get region)
+
+TEMP_DIR=$(mktemp -d)
+
+cp -R web/. $TEMP_DIR/.
+
+# Note that sed works slightly differently between macOS and Linux
+# The below one is for macOS.
+
+sed_prog="s|REPLACE_ME_API_ENDPOINT|$API_ENDPOINT|g"
+sed -i '' $sed_prog $TEMP_DIR/index.html
+sed -i '' $sed_prog $TEMP_DIR/register.html
+sed -i '' $sed_prog $TEMP_DIR/confirm.html
+aws s3 sync $TEMP_DIR s3://$BUCKET_NAME
