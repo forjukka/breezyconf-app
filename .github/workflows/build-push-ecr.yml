@@ -9,7 +9,7 @@ on:
 env:
   AWS_REGION: eu-west-1
   ECR_REPOSITORY: eksstack-breezyrepob8e956fd-x8goxtfoylat # Change this to your ECR repository name
-  K8S_GITOPS_REPO: https://github.com/forjukka/breezyconf-gitops
+  K8S_GITOPS_REPO: forjukka/breezyconf-gitops
   K8S_MANIFEST_FILE: kubernetes/mysfits-deployment.yaml
 
 jobs:
