@@ -51,7 +51,7 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        cd gitops-repo/kubernetes
+        cd gitops-repo
         sed -i 's|image: .*|image: ${{ env.ECR_REGISTRY }}${{ env.ECR_REPOSITORY }}${{ env.IMAGE_TAG }}|' ${{ env.K8S_MANIFEST_FILE }}
   
     - name: Commit and push changes
