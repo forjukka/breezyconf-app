@@ -9,6 +9,8 @@ on:
 env:
   AWS_REGION: eu-west-1
   ECR_REPOSITORY: eksstack-breezyrepob8e956fd-x8goxtfoylat # Change this to your ECR repository name
+  K8S_GITOPS_REPO: https://github.com/forjukka/breezyconf-gitops
+  K8S_MANIFEST_FILE: kubernetes/mysfits-deployment.yaml
 
 jobs:
   build-and-push:
@@ -37,4 +39,30 @@ jobs:
         cd app/monolith-service
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Checkout K8s manifest repo
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ env.K8S_GITOPS_REPO }}
+        path: gitops-repo
+
+    - name: Update Kubernetes manifest
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        cd gitops-repo/kubernetes
+        sed -i 's|image: .*|image: ${{ env.ECR_REGISTRY }}${{ env.ECR_REPOSITORY }}${{ env.IMAGE_TAG }}|' ${{ env.K8S_MANIFEST_FILE }}
+  
+    - name: Commit and push changes
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        cd gitops-repo
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add ${{ env.K8S_MANIFEST_FILE }}
+        git commit -m "Update image to ${{ env.ECR_REGISTRY }}${{ env.ECR_REPOSITORY }}${{ env.IMAGE_TAG }}"
+        git push
 
